@@ -6,6 +6,9 @@ on:
     branches: [ main, master ]
   workflow_dispatch:
 
+permissions:
+  contents: write   # nécessaire pour publier une "Release"
+
 jobs:
   build:
     runs-on: ubuntu-latest
@@ -20,7 +23,6 @@ jobs:
           java-version: '17'
 
       # Les runners ubuntu-latest ont déjà le SDK Android préinstallé.
-      # On accepte juste les licences par sécurité.
       - name: Accepter les licences du SDK Android
         run: yes | "$ANDROID_SDK_ROOT/cmdline-tools/latest/bin/sdkmanager" --licenses >/dev/null 2>&1 || true
 
@@ -30,9 +32,19 @@ jobs:
       - name: Compiler l'APK de debug
         run: ./gradlew assembleDebug --no-daemon --stacktrace
 
-      - name: Publier l'APK téléchargeable
+      # Artefact classique (téléchargeable depuis l'onglet Actions, format zip)
+      - name: Publier l'APK comme artefact
         uses: actions/upload-artifact@v4
         with:
           name: MiniNFC-debug-apk
           path: app/build/outputs/apk/debug/app-debug.apk
           if-no-files-found: error
+
+      # Release : donne un lien de téléchargement DIRECT du .apk (ouvrable sur mobile)
+      - name: Publier l'APK en téléchargement direct (Release)
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: latest
+          name: Dernier APK
+          body: "APK de debug de Mini NFC. Télécharge app-debug.apk ci-dessous."
+          files: app/build/outputs/apk/debug/app-debug.apk
