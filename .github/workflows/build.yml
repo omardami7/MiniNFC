@@ -19,17 +19,20 @@ jobs:
           distribution: temurin
           java-version: '17'
 
-      - name: Préparer le SDK Android
-        uses: android-actions/setup-android@v3
+      # Les runners ubuntu-latest ont déjà le SDK Android préinstallé.
+      # On accepte juste les licences par sécurité.
+      - name: Accepter les licences du SDK Android
+        run: yes | "$ANDROID_SDK_ROOT/cmdline-tools/latest/bin/sdkmanager" --licenses >/dev/null 2>&1 || true
 
       - name: Rendre gradlew exécutable
         run: chmod +x ./gradlew
 
       - name: Compiler l'APK de debug
-        run: ./gradlew assembleDebug --no-daemon
+        run: ./gradlew assembleDebug --no-daemon --stacktrace
 
       - name: Publier l'APK téléchargeable
         uses: actions/upload-artifact@v4
         with:
           name: MiniNFC-debug-apk
           path: app/build/outputs/apk/debug/app-debug.apk
+          if-no-files-found: error
